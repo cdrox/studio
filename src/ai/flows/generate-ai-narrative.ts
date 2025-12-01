@@ -51,13 +51,14 @@ const prompt = ai.definePrompt({
 You are provided with summaries of key metrics, identified anomalies, and potential root causes.
 
 Based on this information, generate a concise and insightful narrative that tells the story behind the data.
-
-Tailor the narrative to the specified industry, if provided, using appropriate terminology and tone.
+{{#if industry}}
+Tailor the narrative to the specified industry, using appropriate terminology and tone.
+Industry: {{{industry}}}
+{{/if}}
 
 Metrics Summary: {{{metricsSummary}}}
 Anomalies Summary: {{{anomaliesSummary}}}
 Root Causes Summary: {{{rootCausesSummary}}}
-Industry: {{{industry}}}
 
 Narrative:`,
 });
