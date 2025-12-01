@@ -6,7 +6,6 @@ export interface DataPoint {
   CSAT: number;
   FCR: number;
   Escalations: number;
-  [key: string]: any;
 }
 
 export interface Anomaly extends DataPoint {
