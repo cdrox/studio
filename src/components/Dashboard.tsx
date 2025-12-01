@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import type { DataPoint, Metric, Anomaly, RootCause } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import MetricCard from '@/components/MetricCard';
-import AINarrative from '@/components/AINarrative';
-import { Clock, Smile, CheckCircle2, ShieldAlert, AlertTriangle, Search, Lightbulb } from 'lucide-react';
+import { Clock, Smile, CheckCircle2, ShieldAlert, AlertTriangle, Search } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -92,10 +91,6 @@ export default function Dashboard({ data, industry }: DashboardProps) {
 
     return { metrics: calculatedMetrics, anomalies: uniqueAnomalies, rootCauses: calculatedRootCauses, chartData: processedChartData };
   }, [data, selectedChartMetric]);
-  
-  const metricsSummary = `Key metrics averages: ${METRICS.map(m => `${m}: ${metrics[m].toFixed(2)}${METRIC_DETAILS[m].unit}`).join(', ')}.`;
-  const anomaliesSummary = `Detected ${anomalies.length} anomalies. Examples: ${anomalies.slice(0, 2).map(a => `a ${a.deviation > 0 ? 'spike' : 'drop'} in ${a.metric} on ${a.date}`).join('; ')}.`;
-  const rootCausesSummary = `Potential root causes: ${rootCauses.slice(0, 2).map(rc => rc.correlation).join('; ')}.`;
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -174,20 +169,11 @@ export default function Dashboard({ data, industry }: DashboardProps) {
                 <CardTitle>Insights Panel</CardTitle>
             </CardHeader>
             <CardContent>
-                <Tabs defaultValue="narrative">
-                    <TabsList className="grid w-full grid-cols-3">
-                        <TabsTrigger value="narrative"><Lightbulb className="w-4 h-4 mr-1"/>Narrative</TabsTrigger>
+                <Tabs defaultValue="anomalies">
+                    <TabsList className="grid w-full grid-cols-2">
                         <TabsTrigger value="anomalies"><AlertTriangle className="w-4 h-4 mr-1"/>Anomalies</TabsTrigger>
                         <TabsTrigger value="rca"><Search className="w-4 h-4 mr-1"/>Root Causes</TabsTrigger>
                     </TabsList>
-                    <TabsContent value="narrative" className="mt-4">
-                        <AINarrative 
-                            metricsSummary={metricsSummary}
-                            anomaliesSummary={anomaliesSummary}
-                            rootCausesSummary={rootCausesSummary}
-                            industry={industry}
-                        />
-                    </TabsContent>
                     <TabsContent value="anomalies" className="mt-4 max-h-96 overflow-y-auto">
                         <div className="space-y-2">
                           {anomalies.length > 0 ? anomalies.map((anomaly, index) => (
