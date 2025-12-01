@@ -54,49 +54,56 @@ export default function DataUpload({ onDataUploaded }: DataUploadProps) {
         throw new Error('CSV file must have a header and at least one row of data.');
       }
       const header = lines[0].split(',').map(h => h.trim());
-      const requiredMetrics = ['AHT', 'CSAT', 'FCR', 'Escalations'];
-      const dateColumn = header.find(h => h === 'date' || h === 'timestamp');
+      const lowercasedHeader = header.map(h => h.toLowerCase());
+      
+      const requiredMetrics = ['aht', 'csat', 'fcr', 'escalations'];
+      const dateColumnIndex = lowercasedHeader.findIndex(h => h === 'date' || h === 'timestamp');
 
-      if (!dateColumn) {
+      if (dateColumnIndex === -1) {
         throw new Error("Missing 'date' or 'timestamp' column.");
       }
 
-      for (const col of requiredMetrics) {
-        if (!header.includes(col)) {
-          throw new Error(`Missing required column: ${col}`);
+      const originalRequiredMetrics = ['AHT', 'CSAT', 'FCR', 'Escalations'];
+      for (const metric of requiredMetrics) {
+        if (!lowercasedHeader.includes(metric)) {
+          const originalMetric = originalRequiredMetrics[requiredMetrics.indexOf(metric)];
+          throw new Error(`Missing required column: ${originalMetric}`);
         }
       }
 
       const data = lines.slice(1).map((line, index) => {
         const values = line.split(',');
         const row: any = {};
-        header.forEach((h, i) => {
-          const value = values[i]?.trim();
-          if (requiredMetrics.includes(h)) { // numeric columns
-            const num = parseFloat(value);
-            if (isNaN(num)) {
-              throw new Error(`Invalid number format in row ${index + 2}, column '${h}'.`);
-            }
-            row[h] = num;
-          } else if (h === dateColumn) {
-            let date;
-            const numValue = Number(value);
-            // Check if it's a number and not a valid date string
-            if (!isNaN(numValue) && isNaN(new Date(value).getTime())) {
-                // If it looks like a Unix timestamp in seconds, convert to milliseconds
-                date = new Date(numValue < 10000000000 ? numValue * 1000 : numValue);
+        
+        header.forEach((originalHeader, i) => {
+            const value = values[i]?.trim();
+            const lowerHeader = originalHeader.toLowerCase();
+
+            if (requiredMetrics.includes(lowerHeader)) {
+                const num = parseFloat(value);
+                if (isNaN(num)) {
+                    throw new Error(`Invalid number format in row ${index + 2}, column '${originalHeader}'.`);
+                }
+                // Use original casing for keys in the final object if needed, or normalize
+                const originalMetricName = originalRequiredMetrics.find(m => m.toLowerCase() === lowerHeader) || originalHeader;
+                row[originalMetricName] = num;
+            } else if (i === dateColumnIndex) {
+                let date;
+                // Handle numeric timestamps (Unix seconds or milliseconds)
+                if (!isNaN(Number(value)) && String(new Date(value)).includes('Invalid')) {
+                    const numValue = Number(value);
+                    date = new Date(numValue < 10000000000 ? numValue * 1000 : numValue);
+                } else { // Handle date strings
+                    date = new Date(value);
+                }
+
+                if (isNaN(date.getTime())) {
+                    throw new Error(`Invalid date/timestamp format in row ${index + 2}, column '${originalHeader}': "${value}"`);
+                }
+                row['date'] = date.toISOString().split('T')[0];
             } else {
-                date = new Date(value);
+                row[originalHeader] = value;
             }
-
-            if (isNaN(date.getTime())) {
-                throw new Error(`Invalid date/timestamp format in row ${index + 2}, column '${h}': "${value}"`);
-            }
-            row['date'] = date.toISOString().split('T')[0];
-
-          } else {
-            row[h] = value;
-          }
         });
         return row as DataPoint;
       });
