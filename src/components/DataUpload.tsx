@@ -79,22 +79,21 @@ export default function DataUpload({ onDataUploaded }: DataUploadProps) {
             }
             row[h] = num;
           } else if (h === dateColumn) {
-            const date = new Date(value);
-             if (isNaN(date.getTime())) {
-                // If the value is a number (like a Unix timestamp), multiply by 1000 for milliseconds
-                const numValue = Number(value);
-                if (!isNaN(numValue)) {
-                    const d = new Date(numValue * 1000);
-                     if (isNaN(d.getTime())) {
-                        throw new Error(`Invalid date/timestamp format in row ${index + 2}, column '${h}'.`);
-                     }
-                     row['date'] = d.toISOString().split('T')[0];
-                } else {
-                    throw new Error(`Invalid date/timestamp format in row ${index + 2}, column '${h}'.`);
-                }
+            let date;
+            const numValue = Number(value);
+            // Check if it's a number and not a valid date string
+            if (!isNaN(numValue) && isNaN(new Date(value).getTime())) {
+                // If it looks like a Unix timestamp in seconds, convert to milliseconds
+                date = new Date(numValue < 10000000000 ? numValue * 1000 : numValue);
             } else {
-                row['date'] = date.toISOString().split('T')[0];
+                date = new Date(value);
             }
+
+            if (isNaN(date.getTime())) {
+                throw new Error(`Invalid date/timestamp format in row ${index + 2}, column '${h}': "${value}"`);
+            }
+            row['date'] = date.toISOString().split('T')[0];
+
           } else {
             row[h] = value;
           }
