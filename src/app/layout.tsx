@@ -3,8 +3,8 @@ import { Toaster } from "@/components/ui/toaster"
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Metrics Maestro',
-  description: 'Real-Time AI Storyteller for CX Metrics',
+  title: 'CX NewsLetter',
+  description: 'A real-time AI Storyteller for CX metrics.',
 };
 
 export default function RootLayout({

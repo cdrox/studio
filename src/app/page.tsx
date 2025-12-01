@@ -103,7 +103,15 @@ export default function Home() {
   }
 
   const renderInitialSelection = () => (
-    <div className="flex justify-center items-center py-12">
+    <div className="flex flex-col items-center justify-center py-12 text-center">
+        <div className="max-w-3xl mb-8">
+            <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+                CX NewsLetter
+            </h1>
+            <p className="mt-6 text-lg leading-8 text-muted-foreground">
+                A real-time AI Storyteller that continuously monitors operational metrics (AHT, CSAT, FCR, escalations) and auto-generates human-like summaries, explaining not just what changed but why it changed.
+            </p>
+        </div>
       <Card className="w-full max-w-lg shadow-lg">
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Get Started</CardTitle>
