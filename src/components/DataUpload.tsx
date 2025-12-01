@@ -54,8 +54,14 @@ export default function DataUpload({ onDataUploaded }: DataUploadProps) {
         throw new Error('CSV file must have a header and at least one row of data.');
       }
       const header = lines[0].split(',').map(h => h.trim());
-      const requiredColumns = ['date', 'AHT', 'CSAT', 'FCR', 'Escalations'];
-      for (const col of requiredColumns) {
+      const requiredMetrics = ['AHT', 'CSAT', 'FCR', 'Escalations'];
+      const dateColumn = header.find(h => h === 'date' || h === 'timestamp');
+
+      if (!dateColumn) {
+        throw new Error("Missing 'date' or 'timestamp' column.");
+      }
+
+      for (const col of requiredMetrics) {
         if (!header.includes(col)) {
           throw new Error(`Missing required column: ${col}`);
         }
@@ -66,12 +72,29 @@ export default function DataUpload({ onDataUploaded }: DataUploadProps) {
         const row: any = {};
         header.forEach((h, i) => {
           const value = values[i]?.trim();
-          if (requiredColumns.slice(1).includes(h)) { // numeric columns
+          if (requiredMetrics.includes(h)) { // numeric columns
             const num = parseFloat(value);
             if (isNaN(num)) {
               throw new Error(`Invalid number format in row ${index + 2}, column '${h}'.`);
             }
             row[h] = num;
+          } else if (h === dateColumn) {
+            const date = new Date(value);
+             if (isNaN(date.getTime())) {
+                // If the value is a number (like a Unix timestamp), multiply by 1000 for milliseconds
+                const numValue = Number(value);
+                if (!isNaN(numValue)) {
+                    const d = new Date(numValue * 1000);
+                     if (isNaN(d.getTime())) {
+                        throw new Error(`Invalid date/timestamp format in row ${index + 2}, column '${h}'.`);
+                     }
+                     row['date'] = d.toISOString().split('T')[0];
+                } else {
+                    throw new Error(`Invalid date/timestamp format in row ${index + 2}, column '${h}'.`);
+                }
+            } else {
+                row['date'] = date.toISOString().split('T')[0];
+            }
           } else {
             row[h] = value;
           }
@@ -100,7 +123,7 @@ export default function DataUpload({ onDataUploaded }: DataUploadProps) {
       <Card className="w-full max-w-2xl shadow-lg">
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Upload Your Data</CardTitle>
-          <CardDescription>Upload a CSV file with your CX metrics to get started.</CardDescription>
+          <CardDescription>Upload a CSV file with your CX metrics to get started. The file should contain 'date' or 'timestamp' and metric columns.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
@@ -145,7 +168,7 @@ export default function DataUpload({ onDataUploaded }: DataUploadProps) {
                   <TableBody>
                     {previewData.map((row, i) => (
                       <TableRow key={i}>
-                        {Object.values(row).map((val, j) => <TableCell key={j}>{val}</TableCell>)}
+                        {Object.entries(row).map(([key, val]) => <TableCell key={key}>{String(val)}</TableCell>)}
                       </TableRow>
                     ))}
                   </TableBody>
