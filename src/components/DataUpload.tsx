@@ -8,8 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { UploadCloud, Loader2, FileCheck2 } from 'lucide-react';
+import { UploadCloud, Loader2, FileCheck2, FileText } from 'lucide-react';
 import type { DataPoint } from '@/lib/types';
+import GenerateTemplateDialog from './GenerateTemplateDialog';
 
 interface DataUploadProps {
   onDataUploaded: (data: DataPoint[], industry: string) => void;
@@ -21,6 +22,7 @@ export default function DataUpload({ onDataUploaded }: DataUploadProps) {
   const [previewData, setPreviewData] = useState<DataPoint[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isTemplateDialogOpen, setTemplateDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -66,7 +68,7 @@ export default function DataUpload({ onDataUploaded }: DataUploadProps) {
       const originalRequiredMetrics = ['AHT', 'CSAT', 'FCR', 'Escalations'];
       for (const metric of requiredMetrics) {
         if (!lowercasedHeader.includes(metric)) {
-          const originalMetric = originalRequiredMetrics[requiredMetrics.indexOf(metric)];
+          const originalMetric = originalRequiredMetrics[requiredMetrics.indexOf(metric)] || metric;
           throw new Error(`Missing required column: ${originalMetric}`);
         }
       }
@@ -84,16 +86,14 @@ export default function DataUpload({ onDataUploaded }: DataUploadProps) {
                 if (isNaN(num)) {
                     throw new Error(`Invalid number format in row ${index + 2}, column '${originalHeader}'.`);
                 }
-                // Use original casing for keys in the final object if needed, or normalize
                 const originalMetricName = originalRequiredMetrics.find(m => m.toLowerCase() === lowerHeader) || originalHeader;
                 row[originalMetricName] = num;
             } else if (i === dateColumnIndex) {
                 let date;
-                // Handle numeric timestamps (Unix seconds or milliseconds)
-                if (!isNaN(Number(value)) && String(new Date(value)).includes('Invalid')) {
+                if (!isNaN(Number(value)) && !String(new Date(value)).includes('Invalid')) {
                     const numValue = Number(value);
                     date = new Date(numValue < 10000000000 ? numValue * 1000 : numValue);
-                } else { // Handle date strings
+                } else {
                     date = new Date(value);
                 }
 
@@ -125,6 +125,7 @@ export default function DataUpload({ onDataUploaded }: DataUploadProps) {
   }, [file, industry, onDataUploaded, toast]);
 
   return (
+    <>
     <div className="flex justify-center items-center py-12">
       <Card className="w-full max-w-2xl shadow-lg">
         <CardHeader>
@@ -152,6 +153,13 @@ export default function DataUpload({ onDataUploaded }: DataUploadProps) {
               <Input id="file-upload" type="file" accept=".csv" onChange={handleFileChange} className="flex-grow" />
             </div>
             {file && <p className="text-sm text-muted-foreground flex items-center gap-2"><FileCheck2 className="w-4 h-4 text-green-500" /> {file.name}</p>}
+          </div>
+
+          <div className='flex items-center gap-2'>
+            <Button onClick={() => setTemplateDialogOpen(true)} variant="outline">
+                <FileText className="mr-2 h-4 w-4" />
+                Generate Template
+            </Button>
           </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
@@ -185,5 +193,7 @@ export default function DataUpload({ onDataUploaded }: DataUploadProps) {
         </CardContent>
       </Card>
     </div>
+    <GenerateTemplateDialog open={isTemplateDialogOpen} onOpenChange={setTemplateDialogOpen} />
+    </>
   );
 }
