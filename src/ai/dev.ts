@@ -1,1 +1,6 @@
-// Flows will be imported for their side effects in this file.
+import { config } from 'dotenv';
+config();
+
+import '@/ai/flows/refine-narrative-with-industry-tone.ts';
+import '@/ai/flows/generate-ai-narrative.ts';
+import '@/ai/flows/create-template-from-prompt.ts';
